@@ -38,8 +38,7 @@
                                 <TextBlock Text="{Binding DisplayName}"
                                            FontFamily="{StaticResource HeadingFont}"
                                            FontSize="13" FontWeight="Bold"
-                                           Foreground="{StaticResource Text}"
-                                           TextTransform="Uppercase"/>
+                                           Foreground="{StaticResource Text}"/>
                                 <TextBlock Text="{Binding Description}"
                                            FontSize="11" Foreground="{StaticResource TextDim}"
                                            TextWrapping="Wrap" Margin="0,3,20,0"
@@ -204,7 +203,7 @@
             </Border>
 
             <!-- Scrollable tweak list -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+            <ScrollViewer x:Name="TweakScroller" Grid.Row="1" VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Background="{StaticResource Bg}">
                 <ItemsControl x:Name="TweakList"
@@ -216,6 +215,13 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Backup & Restore page (hidden by default, shown for Module 09) -->
+            <ScrollViewer x:Name="BackupScroller" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Background="{StaticResource Bg}" Visibility="Collapsed">
+                <StackPanel x:Name="BackupPanel" Margin="24,10,24,24"/>
             </ScrollViewer>
         </Grid>
     </Grid>

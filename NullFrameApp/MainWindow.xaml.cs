@@ -9,6 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using NullFrame.Models;
+using NullFrame.Services;
 using NullFrame.Tweaks;
 
 namespace NullFrame
@@ -60,6 +61,7 @@ namespace NullFrame
             new("STORAGE & SSD",     "storage", "06"),
             new("MEMORY & RAM",      "memory",  "07"),
             new("PRIVACY & DEBLOAT", "privacy", "08"),
+            new("BACKUP & RESTORE", "backup",  "09"),
         };
 
         private readonly Dictionary<string, List<Tweak>> _tweakMap;
@@ -123,18 +125,34 @@ namespace NullFrame
 
             // Find category info
             var cat = Categories.First(c => c.Key == key);
-            var tweaks = _tweakMap.GetValueOrDefault(key) ?? new List<Tweak>();
 
-            // Update header
-            HeaderEyebrow.Text = $"NULLFRAME  //  MODULE {cat.Number}";
-            HeaderTitle.Text = cat.Name;
-            HeaderCount.Text = $"{tweaks.Count} TWEAKS AVAILABLE";
+            if (key == "backup")
+            {
+                // Show backup page, hide tweak list
+                TweakScroller.Visibility = Visibility.Collapsed;
+                BackupScroller.Visibility = Visibility.Visible;
 
-            // Set tweak list
-            TweakList.ItemsSource = tweaks;
+                HeaderEyebrow.Text = $"NULLFRAME  //  MODULE {cat.Number}";
+                HeaderTitle.Text = cat.Name;
+                HeaderCount.Text = "SYSTEM RESTORE";
 
-            // Load initial states for toggle tweaks
-            LoadTweakStates(tweaks);
+                BuildBackupPage();
+            }
+            else
+            {
+                // Show tweak list, hide backup page
+                TweakScroller.Visibility = Visibility.Visible;
+                BackupScroller.Visibility = Visibility.Collapsed;
+
+                var tweaks = _tweakMap.GetValueOrDefault(key) ?? new List<Tweak>();
+
+                HeaderEyebrow.Text = $"NULLFRAME  //  MODULE {cat.Number}";
+                HeaderTitle.Text = cat.Name;
+                HeaderCount.Text = $"{tweaks.Count} TWEAKS AVAILABLE";
+
+                TweakList.ItemsSource = tweaks;
+                LoadTweakStates(tweaks);
+            }
         }
 
         private async void LoadTweakStates(List<Tweak> tweaks)
@@ -220,6 +238,266 @@ namespace NullFrame
             await Task.Delay(3200);
             tweak.StatusText = "";
         }
+
+        // ── Backup & Restore page ─────────────────────────────────────────────
+
+        private StackPanel? _restorePointList;
+
+        private void BuildBackupPage()
+        {
+            BackupPanel.Children.Clear();
+
+            // ── Section 1: Create Restore Point ───────────────────────────────
+            var createCard = MakeCard();
+            var createStack = new StackPanel { Margin = new Thickness(16, 14, 16, 14) };
+
+            createStack.Children.Add(MakeLabel("CREATE RESTORE POINT", 13, "Text", FontWeights.Bold));
+            createStack.Children.Add(MakeLabel("Create a new Windows System Restore point before applying tweaks.", 11, "TextDim"));
+
+            var inputRow = new Grid { Margin = new Thickness(0, 12, 0, 0) };
+            inputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            inputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var nameBox = new TextBox
+            {
+                Text = "NullFrame Backup",
+                FontSize = 12,
+                Padding = new Thickness(12, 8, 12, 8),
+                Background = Res<Brush>("Surface"),
+                Foreground = Res<Brush>("Text"),
+                BorderBrush = Res<Brush>("BorderMid"),
+                BorderThickness = new Thickness(1),
+                CaretBrush = Res<Brush>("Text"),
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(nameBox, 0);
+            inputRow.Children.Add(nameBox);
+
+            var createBtn = new Button
+            {
+                Content = "CREATE  \u25B6",
+                Style = (Style)FindResource("ApplyButton"),
+                MinWidth = 120,
+                Height = 36,
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+            var createStatus = MakeLabel("", 10, "Success", FontWeights.Bold);
+            createStatus.Margin = new Thickness(0, 8, 0, 0);
+
+            createBtn.Click += async (s, e) =>
+            {
+                createBtn.IsEnabled = false;
+                createBtn.Content = "CREATING...";
+                var desc = nameBox.Text.Trim();
+                if (string.IsNullOrEmpty(desc)) desc = "NullFrame Backup";
+
+                bool ok = await Task.Run(() => BackupService.CreateRestorePoint(desc));
+                createStatus.Text = ok ? "RESTORE POINT CREATED \u2713" : "FAILED TO CREATE \u2717";
+                createStatus.Foreground = ok ? Res<Brush>("Success") : Res<Brush>("NfBright");
+
+                createBtn.Content = "CREATE  \u25B6";
+                createBtn.IsEnabled = true;
+
+                // Refresh the list
+                if (ok) await RefreshRestorePoints();
+
+                await Task.Delay(3200);
+                createStatus.Text = "";
+            };
+            Grid.SetColumn(createBtn, 1);
+            inputRow.Children.Add(createBtn);
+
+            createStack.Children.Add(inputRow);
+            createStack.Children.Add(createStatus);
+            createCard.Child = createStack;
+            BackupPanel.Children.Add(createCard);
+
+            // ── Section 2: Open System Restore Wizard ─────────────────────────
+            var wizardCard = MakeCard();
+            var wizardStack = new StackPanel { Margin = new Thickness(16, 14, 16, 14) };
+
+            wizardStack.Children.Add(MakeLabel("SYSTEM RESTORE WIZARD", 13, "Text", FontWeights.Bold));
+            wizardStack.Children.Add(MakeLabel("Open the Windows System Restore interface to roll back to a previous restore point.", 11, "TextDim"));
+
+            var wizardBtn = new Button
+            {
+                Content = "OPEN SYSTEM RESTORE",
+                Style = (Style)FindResource("ConfigButton"),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 12, 0, 0),
+                MinWidth = 200
+            };
+            wizardBtn.Click += (s, e) => Task.Run(() => BackupService.OpenSystemRestore());
+            wizardStack.Children.Add(wizardBtn);
+
+            wizardCard.Child = wizardStack;
+            BackupPanel.Children.Add(wizardCard);
+
+            // ── Section 3: Existing Restore Points ────────────────────────────
+            var listCard = MakeCard();
+            var listStack = new StackPanel { Margin = new Thickness(16, 14, 16, 14) };
+
+            var listHeader = new Grid();
+            listHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            listHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var listTitle = MakeLabel("EXISTING RESTORE POINTS", 13, "Text", FontWeights.Bold);
+            Grid.SetColumn(listTitle, 0);
+            listHeader.Children.Add(listTitle);
+
+            var refreshBtn = new Button
+            {
+                Content = "REFRESH",
+                Style = (Style)FindResource("ConfigButton"),
+                MinWidth = 90
+            };
+            refreshBtn.Click += async (s, e) =>
+            {
+                refreshBtn.IsEnabled = false;
+                refreshBtn.Content = "LOADING...";
+                await RefreshRestorePoints();
+                refreshBtn.Content = "REFRESH";
+                refreshBtn.IsEnabled = true;
+            };
+            Grid.SetColumn(refreshBtn, 1);
+            listHeader.Children.Add(refreshBtn);
+
+            listStack.Children.Add(listHeader);
+
+            _restorePointList = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
+            listStack.Children.Add(_restorePointList);
+
+            listCard.Child = listStack;
+            BackupPanel.Children.Add(listCard);
+
+            // Load restore points
+            _ = RefreshRestorePoints();
+        }
+
+        private async Task RefreshRestorePoints()
+        {
+            if (_restorePointList == null) return;
+
+            _restorePointList.Children.Clear();
+            _restorePointList.Children.Add(MakeLabel("Loading restore points...", 11, "TextDim"));
+
+            var points = await Task.Run(() => BackupService.GetRestorePoints());
+
+            _restorePointList.Children.Clear();
+
+            if (points.Count == 0)
+            {
+                _restorePointList.Children.Add(MakeLabel("No restore points found.", 11, "TextDim"));
+                return;
+            }
+
+            foreach (var pt in points)
+            {
+                var row = new Border
+                {
+                    Background = Res<Brush>("Surface"),
+                    BorderBrush = Res<Brush>("BorderBr"),
+                    BorderThickness = new Thickness(1),
+                    Margin = new Thickness(0, 4, 0, 4),
+                    Padding = new Thickness(14)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                // Sequence badge
+                var badge = new Border
+                {
+                    Background = Res<Brush>("NfDeep"),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(8, 4, 8, 4),
+                    Margin = new Thickness(0, 0, 12, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                badge.Child = new TextBlock
+                {
+                    Text = $"#{pt.SequenceNumber}",
+                    FontSize = 11, FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    FontFamily = Res<FontFamily>("HeadingFont")
+                };
+                Grid.SetColumn(badge, 0);
+                grid.Children.Add(badge);
+
+                // Info
+                var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                info.Children.Add(MakeLabel(pt.Description.ToUpper(), 12, "Text", FontWeights.Bold));
+
+                var detailPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 0) };
+                detailPanel.Children.Add(MakeLabel(pt.CreationTime, 10, "TextDim"));
+                detailPanel.Children.Add(MakeLabel("  \u2022  ", 10, "TextDim"));
+                detailPanel.Children.Add(MakeLabel(pt.RestorePointType, 10, "TextDim"));
+                info.Children.Add(detailPanel);
+
+                Grid.SetColumn(info, 1);
+                grid.Children.Add(info);
+
+                // Restore button
+                var seqNum = pt.SequenceNumber;
+                var restoreBtn = new Button
+                {
+                    Content = "RESTORE",
+                    Style = (Style)FindResource("ConfigButton"),
+                    MinWidth = 90,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                restoreBtn.Click += async (s, e) =>
+                {
+                    var result = MessageBox.Show(
+                        $"Restore to point #{seqNum}?\n\nThis will restart your computer and roll back system changes.",
+                        "CONFIRM RESTORE",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        restoreBtn.IsEnabled = false;
+                        restoreBtn.Content = "RESTORING...";
+                        await Task.Run(() => BackupService.RestoreToPoint(seqNum));
+                    }
+                };
+                Grid.SetColumn(restoreBtn, 2);
+                grid.Children.Add(restoreBtn);
+
+                row.Child = grid;
+                _restorePointList.Children.Add(row);
+            }
+        }
+
+        // ── UI helpers for backup page ────────────────────────────────────────
+
+        private static Border MakeCard()
+        {
+            return new Border
+            {
+                Background = (Brush)Application.Current.Resources["Card"],
+                BorderBrush = (Brush)Application.Current.Resources["BorderBr"],
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+        }
+
+        private static TextBlock MakeLabel(string text, double size, string brushKey, FontWeight? weight = null)
+        {
+            return new TextBlock
+            {
+                Text = text,
+                FontSize = size,
+                Foreground = (Brush)Application.Current.Resources[brushKey],
+                FontWeight = weight ?? FontWeights.Normal,
+                FontFamily = (FontFamily)Application.Current.Resources["HeadingFont"],
+                TextWrapping = TextWrapping.Wrap
+            };
+        }
+
+        private static T Res<T>(string key) => (T)Application.Current.Resources[key];
     }
 
     // ── Preset Dialog ────────────────────────────────────────────────────────

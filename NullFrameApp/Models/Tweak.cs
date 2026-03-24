@@ -64,7 +64,7 @@ namespace NullFrame.Models
             set { _isBusy = value; OnPropertyChanged(); }
         }
 
-        public string DisplayName => IsFree ? $"{Name}  (FREE)" : Name;
+        public string DisplayName => IsFree ? $"{Name.ToUpper()}  (FREE)" : Name.ToUpper();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)

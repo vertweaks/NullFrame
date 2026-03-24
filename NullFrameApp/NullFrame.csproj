@@ -6,7 +6,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>NullFrame</AssemblyName>
     <RootNamespace>NullFrame</RootNamespace>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <!-- <ApplicationIcon>icon.ico</ApplicationIcon> -->
     <Description>NULLFRAME — Windows Performance Optimizer</Description>
     <Company>NullFrame</Company>
     <Product>NullFrame</Product>
