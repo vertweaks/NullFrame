@@ -84,6 +84,7 @@ namespace NullFrame.Tweaks
                     RegistryHelper.DeleteValue(RegistryHive.LocalMachine, UsbHubKey, "DisableSelectiveSuspend");
                     return true;
                 },
+                Check = () => RegistryHelper.GetDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Services\USB", "DisableSelectiveSuspend", 0) == 1,
             },
 
             // ── Set Debug Poll Interval ──
@@ -132,6 +133,7 @@ namespace NullFrame.Tweaks
                 Disable = () => SystemHelper.RunPowerShell(
                     $"powercfg /setacvalueindex SCHEME_CURRENT {UsbSuspendAc} {UsbSuspendSk} 1; " +
                     "powercfg /apply").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\USB' -Name 'DisableSelectiveSuspend' -ErrorAction SilentlyContinue).DisableSelectiveSuspend", true); return ok && output.Trim() == "1"; },
             },
 
             // ── Disable Mouse Acceleration ──
@@ -247,6 +249,7 @@ namespace NullFrame.Tweaks
                     "powercfg /change monitor-timeout-ac 15; " +
                     "powercfg /change standby-timeout-ac 30; " +
                     "powercfg /change hibernate-timeout-ac 0").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("powercfg /query SCHEME_CURRENT SUB_SLEEP STANDBYIDLE | Select-String 'Current AC' | ForEach-Object { ($_ -split ':')[1].Trim() }", true); return ok && output.Trim() == "0x00000000"; },
             },
 
             // ── FREE: Disable Pointer Ballistics ──

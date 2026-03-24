@@ -327,6 +327,69 @@ namespace NullFrame
             tweak.StatusText = "";
         }
 
+        // ── Revert All Tweaks ─────────────────────────────────────────────────
+
+        private async void OnRevertAllClicked(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "This will revert ALL enabled toggle tweaks across every module back to their default (OFF) state.\n\nAre you sure?",
+                "REVERT ALL TWEAKS",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            RevertAllBtn.IsEnabled = false;
+            RevertAllBtn.Content = "REVERTING...";
+
+            int reverted = 0;
+            int failed = 0;
+
+            foreach (var tweaks in _tweakMap.Values)
+            {
+                foreach (var tweak in tweaks)
+                {
+                    if (tweak.Type == TweakType.Toggle && tweak.IsEnabled && tweak.Disable != null)
+                    {
+                        var t = tweak;
+                        try
+                        {
+                            bool ok = await Task.Run(() => t.Disable!());
+                            if (ok)
+                            {
+                                t.IsEnabled = false;
+                                t.StatusText = "REVERTED \u2713";
+                                t.StatusSuccess = true;
+                                reverted++;
+                            }
+                            else
+                            {
+                                t.StatusText = "FAILED \u2717";
+                                t.StatusSuccess = false;
+                                failed++;
+                            }
+                        }
+                        catch
+                        {
+                            t.StatusText = "FAILED \u2717";
+                            t.StatusSuccess = false;
+                            failed++;
+                        }
+                        _ = ClearStatusAfterDelay(t);
+                    }
+                }
+            }
+
+            RevertAllBtn.Content = "\u27F2  REVERT ALL TWEAKS";
+            RevertAllBtn.IsEnabled = true;
+
+            MessageBox.Show(
+                $"Revert complete.\n\n{reverted} tweaks reverted successfully.\n{failed} tweaks failed.",
+                "REVERT COMPLETE",
+                MessageBoxButton.OK,
+                failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+        }
+
         // ── Backup & Restore page ─────────────────────────────────────────────
 
         private StackPanel? _restorePointList;

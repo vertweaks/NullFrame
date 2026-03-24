@@ -123,6 +123,7 @@ namespace NullFrame.Tweaks
                     $"powercfg /setacvalueindex SCHEME_CURRENT {IdleGuid} {IdleSubkey} 0; " +
                     $"powercfg /setdcvalueindex SCHEME_CURRENT {IdleGuid} {IdleSubkey} 0; " +
                     "powercfg /apply").success,
+                Check = () => { var val = SystemHelper.QueryPowerCfg("2e601130-5351-4d9d-8e04-252966bad054", "d502f7ee-1dc7-4efd-a55d-f04b6f5c0545"); return val.Contains("0x00000001"); },
             },
 
             // ── Processor Idle Disable ──
@@ -141,6 +142,7 @@ namespace NullFrame.Tweaks
                     "powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR IDLEDISABLE 0; " +
                     "powercfg /setdcvalueindex SCHEME_CURRENT SUB_PROCESSOR IDLEDISABLE 0; " +
                     "powercfg /apply").success,
+                Check = () => { var val = SystemHelper.QueryPowerCfg("SUB_PROCESSOR", "IDLEDISABLE"); return val.Contains("0x00000001"); },
             },
 
             // ── Temporarily Kill Explorer ──
@@ -153,6 +155,7 @@ namespace NullFrame.Tweaks
                 HasWarning = true,
                 Enable = () => SystemHelper.RunPowerShell("Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue").success,
                 Disable = () => SystemHelper.RunPowerShell("Start-Process explorer").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("(Get-Process explorer -ErrorAction SilentlyContinue) -eq $null", true); return output.Trim() == "True"; },
             },
 
             // ── Set SBR Connections ──

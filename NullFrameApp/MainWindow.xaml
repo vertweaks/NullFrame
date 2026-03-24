@@ -144,11 +144,16 @@
                 <StackPanel x:Name="NavPanel" Grid.Row="3" Margin="6,0,6,0"/>
 
                 <!-- Footer -->
-                <StackPanel Grid.Row="4" Margin="20,0,0,16">
-                    <Rectangle Height="1" Margin="0,0,14,12"
+                <StackPanel Grid.Row="4" Margin="10,0,10,14">
+                    <Rectangle Height="1" Margin="6,0,6,10"
                                Fill="{StaticResource BorderMid}"/>
+                    <Button x:Name="RevertAllBtn" Content="⟲  REVERT ALL TWEAKS"
+                            Style="{StaticResource ConfigButton}"
+                            HorizontalAlignment="Stretch" Height="34"
+                            Margin="0,0,0,10"
+                            Click="OnRevertAllClicked"/>
                     <TextBlock FontSize="9" Foreground="{StaticResource TextDim}"
-                               FontFamily="{StaticResource BodyFont}">
+                               FontFamily="{StaticResource BodyFont}" Margin="10,0,0,0">
                         <Run Text="NULLFRAME  //  V1.0"/>
                         <LineBreak/>
                         <Run Text="RUN AS ADMINISTRATOR"/>

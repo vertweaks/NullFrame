@@ -169,6 +169,7 @@ namespace NullFrame.Tweaks
                     $"powercfg /setacvalueindex SCHEME_CURRENT {IdleGuid} {IdleSubkey} 0; " +
                     $"powercfg /setdcvalueindex SCHEME_CURRENT {IdleGuid} {IdleSubkey} 0; " +
                     "powercfg /apply").success,
+                Check = () => { var val = SystemHelper.QueryPowerCfg("2e601130-5351-4d9d-8e04-252966bad054", "d502f7ee-1dc7-4efd-a55d-f04b6f5c0545"); return val.Contains("0x00000001"); },
             },
 
             // ── Processor Idle Disable ──
@@ -187,6 +188,7 @@ namespace NullFrame.Tweaks
                     "powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR IDLEDISABLE 0; " +
                     "powercfg /setdcvalueindex SCHEME_CURRENT SUB_PROCESSOR IDLEDISABLE 0; " +
                     "powercfg /apply").success,
+                Check = () => { var val = SystemHelper.QueryPowerCfg("SUB_PROCESSOR", "IDLEDISABLE"); return val.Contains("0x00000001"); },
             },
 
             // ── Disable Basic C-States ──
@@ -231,6 +233,7 @@ namespace NullFrame.Tweaks
                 HasWarning = false,
                 Enable = () => SystemHelper.RunBcdedit("/set disabledynamictick yes"),
                 Disable = () => SystemHelper.RunBcdedit("/deletevalue disabledynamictick"),
+                Check = () => SystemHelper.CheckBcdedit("disabledynamictick", "yes"),
             },
 
             // ── Disable Modern Standby ──
@@ -262,6 +265,7 @@ namespace NullFrame.Tweaks
                     "powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTPOL 50; " +
                     "powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTMODE 1; " +
                     "powercfg /apply").success,
+                Check = () => { var val = SystemHelper.QueryPowerCfg("SUB_PROCESSOR", "PERFBOOSTPOL"); return val.Contains("0x00000064"); },
             },
 
             // ── Set Minimum and Maximum Processor State ──
@@ -280,6 +284,7 @@ namespace NullFrame.Tweaks
                     "powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 5; " +
                     "powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100; " +
                     "powercfg /apply").success,
+                Check = () => { var val = SystemHelper.QueryPowerCfg("SUB_PROCESSOR", "PROCTHROTTLEMIN"); return val.Contains("0x00000064"); },
             },
 
             // ── Set Kernel Worker Threads ──

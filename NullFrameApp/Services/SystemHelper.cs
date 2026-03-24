@@ -96,5 +96,60 @@ namespace NullFrame.Services
             var (ok, _) = RunCmd($"schtasks {args}");
             return ok;
         }
+
+        /// <summary>Check if a bcdedit value contains a specific string.</summary>
+        public static bool CheckBcdedit(string valueName, string expected)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "bcdedit.exe",
+                    Arguments = "/enum {current}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true
+                };
+                using var proc = Process.Start(psi);
+                if (proc == null) return false;
+                var output = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit(10000);
+                foreach (var line in output.Split('\n'))
+                {
+                    if (line.Trim().StartsWith(valueName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return line.ToLower().Contains(expected.ToLower());
+                    }
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
+        /// <summary>Check if a Windows service is disabled.</summary>
+        public static bool IsServiceDisabled(string serviceName)
+        {
+            var (ok, output) = RunPowerShell(
+                $"(Get-Service -Name '{serviceName}' -ErrorAction SilentlyContinue).StartType", true);
+            return ok && output.Trim().Equals("Disabled", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Check if a Windows service is running.</summary>
+        public static bool IsServiceRunning(string serviceName)
+        {
+            var (ok, output) = RunPowerShell(
+                $"(Get-Service -Name '{serviceName}' -ErrorAction SilentlyContinue).Status", true);
+            return ok && output.Trim().Equals("Running", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Query a powercfg setting value.</summary>
+        public static string QueryPowerCfg(string subgroup, string setting)
+        {
+            var (ok, output) = RunPowerShell(
+                $"$scheme = (powercfg /getactivescheme) -replace '.*: ',''; " +
+                $"$out = powercfg /query $scheme {subgroup} {setting}; " +
+                "$out | Select-String 'Current AC Power Setting' | ForEach-Object {{ ($_ -split ':')[1].Trim() }}", true);
+            return ok ? output.Trim() : "";
+        }
     }
 }

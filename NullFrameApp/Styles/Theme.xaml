@@ -10,17 +10,17 @@
     <Color x:Key="NfDeepColor">#AA0D1C</Color>
     <Color x:Key="NfOrangeColor">#FF4D00</Color>
 
-    <Color x:Key="BgColor">#FF080809</Color>
-    <Color x:Key="PanelColor">#FF0C0C10</Color>
-    <Color x:Key="CardColor">#FF0F0F15</Color>
-    <Color x:Key="SurfaceColor">#FF141420</Color>
+    <Color x:Key="BgColor">#FF0C0C12</Color>
+    <Color x:Key="PanelColor">#FF111118</Color>
+    <Color x:Key="CardColor">#FF16161F</Color>
+    <Color x:Key="SurfaceColor">#FF1C1C28</Color>
 
-    <Color x:Key="BorderColor">#FF1A0507</Color>
-    <Color x:Key="BorderMidColor">#FF480E18</Color>
+    <Color x:Key="BorderColor">#FF2A2A38</Color>
+    <Color x:Key="BorderMidColor">#FF5A1525</Color>
 
     <Color x:Key="TextColor">#FFFFFFFF</Color>
-    <Color x:Key="TextMidColor">#FFAAAAAA</Color>
-    <Color x:Key="TextDimColor">#FF666677</Color>
+    <Color x:Key="TextMidColor">#FFCCCCCC</Color>
+    <Color x:Key="TextDimColor">#FF888899</Color>
 
     <Color x:Key="SuccessColor">#FF4ADE80</Color>
     <Color x:Key="WarningColor">#FFFF4D00</Color>

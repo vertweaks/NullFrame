@@ -89,6 +89,7 @@ namespace NullFrame.Tweaks
                     SystemHelper.RunCmd("netsh interface isatap set state default");
                     return true;
                 },
+                Check = () => { var (ok, output) = SystemHelper.RunCmd("netsh interface teredo show state", true); return ok && output.ToLower().Contains("disabled"); },
             },
 
             // ── Disable Security Profiles ──
@@ -103,6 +104,7 @@ namespace NullFrame.Tweaks
                     "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False -ErrorAction SilentlyContinue").success,
                 Disable = () => SystemHelper.RunPowerShell(
                     "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction SilentlyContinue").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("(Get-NetFirewallProfile -Profile Domain).Enabled", true); return ok && output.Trim() == "False"; },
             },
 
             // ── Enable Weak Host Send/Receive ──
@@ -123,6 +125,7 @@ namespace NullFrame.Tweaks
                     @"foreach ($a in $adapters) { " +
                     @"netsh interface ipv4 set interface $a.InterfaceIndex weakhostreceive=disabled store=persistent; " +
                     @"netsh interface ipv4 set interface $a.InterfaceIndex weakhostsend=disabled store=persistent }").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("(Get-NetIPInterface -AddressFamily IPv4 | Select-Object -First 1).WeakHostReceive", true); return ok && output.Trim() == "Enabled"; },
             },
 
             // ── Enhance Connection Stability ──
@@ -246,6 +249,7 @@ namespace NullFrame.Tweaks
                     @"foreach ($a in $adapters) { " +
                     @"Enable-NetAdapterChecksumOffload -Name $a.Name -ErrorAction SilentlyContinue; " +
                     @"Set-NetAdapterLso -Name $a.Name -IPv4Enabled $true -IPv6Enabled $true -ErrorAction SilentlyContinue }").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("(Get-NetAdapterChecksumOffload | Select-Object -First 1).TcpIPv4", true); return ok && output.Trim() == "Disabled"; },
             },
 
             // ── Optimize Packet Coalescing ──
@@ -266,6 +270,7 @@ namespace NullFrame.Tweaks
                     return true;
                 },
                 Disable = () => SystemHelper.RunCmd("netsh int tcp set global rsc=enabled").success,
+                Check = () => { var (ok, output) = SystemHelper.RunCmd("netsh int tcp show global", true); return ok && output.ToLower().Contains("receive-side coalescing state") && output.ToLower().Contains("disabled"); },
             },
 
             // ── Optimize Winsock Buffer Network ──
@@ -345,6 +350,7 @@ namespace NullFrame.Tweaks
                     return true;
                 },
                 Disable = () => SystemHelper.RunCmd("netsh int tcp set heuristics enabled").success,
+                Check = () => { var (ok, output) = SystemHelper.RunCmd("netsh int tcp show heuristics", true); return ok && output.ToLower().Contains("disabled"); },
             },
 
             // ── Disable MPF ──
@@ -357,6 +363,7 @@ namespace NullFrame.Tweaks
                 HasWarning = false,
                 Enable = () => SystemHelper.RunCmd("netsh int tcp set global rss=disabled").success,
                 Disable = () => SystemHelper.RunCmd("netsh int tcp set global rss=enabled").success,
+                Check = () => { var (ok, output) = SystemHelper.RunCmd("netsh int tcp show global", true); return ok && output.ToLower().Contains("receive-side scaling state") && output.ToLower().Contains("disabled"); },
             },
 
             // ── FREE: Flush DNS Cache ──

@@ -25,6 +25,7 @@ namespace NullFrame.Tweaks
                 Disable = () => SystemHelper.RunPowerShell(
                     @"$ports = Get-PnpDevice -Class Ports -ErrorAction SilentlyContinue; " +
                     @"foreach ($p in $ports) { Enable-PnpDevice -InstanceId $p.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }").success,
+                Check = () => { var (ok, output) = SystemHelper.RunPowerShell("(Get-PnpDevice -Class Ports -ErrorAction SilentlyContinue | Where-Object {$_.Status -eq 'OK'}).Count", true); return ok && (output.Trim() == "0" || output.Trim() == ""); },
             },
 
             // ── Disable Bus Programmable Interrupt Controller ──
@@ -37,6 +38,7 @@ namespace NullFrame.Tweaks
                 HasWarning = true,
                 Enable = () => SystemHelper.RunBcdedit("/set uselegacyapicmode no"),
                 Disable = () => SystemHelper.RunBcdedit("/deletevalue uselegacyapicmode"),
+                Check = () => SystemHelper.CheckBcdedit("uselegacyapicmode", "no"),
             },
 
             // ── Disable High Precision Event Timer ──
@@ -65,6 +67,7 @@ namespace NullFrame.Tweaks
                         @"if ($hpet) { Enable-PnpDevice -InstanceId $hpet.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }");
                     return true;
                 },
+                Check = () => SystemHelper.CheckBcdedit("disabledynamictick", "yes"),
             },
 
             // ── Disable Microsoft Do Moveable Sync ──
@@ -109,6 +112,7 @@ namespace NullFrame.Tweaks
                 Disable = () => SystemHelper.RunPowerShell(
                     @"foreach ($s in @('HvHost','vmicheartbeat','vmickvpexchange','vmicrdv','vmicshutdown','vmictimesync','vmicvss')) { " +
                     @"Set-Service -Name $s -StartupType Manual -ErrorAction SilentlyContinue }").success,
+                Check = () => SystemHelper.IsServiceDisabled("HvHost"),
             },
 
             // ── Disable Remote Desktop Device Redirector Bus ──
@@ -127,6 +131,7 @@ namespace NullFrame.Tweaks
                 Disable = () => SystemHelper.RunPowerShell(
                     "Set-Service -Name RDPDR -StartupType Manual -ErrorAction SilentlyContinue; " +
                     "Set-Service -Name RdpBus -StartupType Manual -ErrorAction SilentlyContinue").success,
+                Check = () => SystemHelper.IsServiceDisabled("RDPDR"),
             },
 
             // ── Disable Serial Ports ──
@@ -146,6 +151,7 @@ namespace NullFrame.Tweaks
                     @"$ports = Get-PnpDevice -Class Ports -ErrorAction SilentlyContinue; " +
                     @"foreach ($p in $ports) { Enable-PnpDevice -InstanceId $p.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }; " +
                     "Set-Service -Name Serial -StartupType Manual -ErrorAction SilentlyContinue").success,
+                Check = () => SystemHelper.IsServiceDisabled("Serial"),
             },
         };
     }
