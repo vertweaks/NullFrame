@@ -102,6 +102,46 @@ namespace NullFrame
 
             BuildNavButtons();
             Navigate("cpu");
+
+            // Scan all tweak states on startup (background)
+            LoadAllTweakStates();
+        }
+
+        private async void LoadAllTweakStates()
+        {
+            foreach (var tweaks in _tweakMap.Values)
+            {
+                await Task.Run(() =>
+                {
+                    foreach (var t in tweaks)
+                    {
+                        try
+                        {
+                            if (t.Type == TweakType.Toggle && t.Check != null)
+                            {
+                                bool state = t.Check();
+                                Dispatcher.Invoke(() => t.IsEnabled = state);
+                            }
+                            else if (t.Type == TweakType.Preset && t.Presets != null)
+                            {
+                                foreach (var preset in t.Presets)
+                                {
+                                    if (preset.Check != null && preset.Check())
+                                    {
+                                        Dispatcher.Invoke(() =>
+                                        {
+                                            t.StatusText = $"ACTIVE: {preset.Name.ToUpper()}";
+                                            t.StatusSuccess = true;
+                                        });
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                });
+            }
         }
 
         // ── Sidebar navigation ───────────────────────────────────────────────
@@ -185,13 +225,33 @@ namespace NullFrame
 
         private async void LoadTweakStates(List<Tweak> tweaks)
         {
-            foreach (var tweak in tweaks.Where(t => t.Type == TweakType.Toggle && t.Check != null))
+            foreach (var tweak in tweaks)
             {
                 var t = tweak;
                 try
                 {
-                    bool state = await Task.Run(() => t.Check!());
-                    t.IsEnabled = state;
+                    if (t.Type == TweakType.Toggle && t.Check != null)
+                    {
+                        bool state = await Task.Run(() => t.Check!());
+                        t.IsEnabled = state;
+                    }
+                    else if (t.Type == TweakType.Preset && t.Presets != null)
+                    {
+                        var presets = t.Presets;
+                        var activeName = await Task.Run(() =>
+                        {
+                            foreach (var p in presets)
+                            {
+                                if (p.Check != null && p.Check()) return p.Name;
+                            }
+                            return null;
+                        });
+                        if (activeName != null)
+                        {
+                            t.StatusText = $"ACTIVE: {activeName.ToUpper()}";
+                            t.StatusSuccess = true;
+                        }
+                    }
                 }
                 catch { }
             }
