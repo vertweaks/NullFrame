@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# C# / .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.nupkg
+
+# OS
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log

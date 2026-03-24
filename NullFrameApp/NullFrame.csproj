@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>NullFrame</AssemblyName>
+    <RootNamespace>NullFrame</RootNamespace>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <Description>NULLFRAME — Windows Performance Optimizer</Description>
+    <Company>NullFrame</Company>
+    <Product>NullFrame</Product>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+</Project>

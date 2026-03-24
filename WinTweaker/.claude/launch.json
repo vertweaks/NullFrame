@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "notes": "No web dev servers detected. Projects found: WinTweaker (Python desktop GUI), MacTrack (Xcode), AI Macro Tracker (Xcode). Only the Python app has a launchable entry.",
+  "configurations": [
+    {
+      "name": "VER TWEAKS (Python GUI)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["main.py"],
+      "port": null,
+      "cwd": "${workspaceFolder}",
+      "notes": "Desktop GUI app — requires Windows + Administrator. No HTTP port."
+    },
+    {
+      "name": "VER TWEAKS via launcher (Windows)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "launch.bat"],
+      "port": null,
+      "cwd": "${workspaceFolder}",
+      "notes": "Installs deps then relaunches as Administrator. Windows only."
+    }
+  ]
+}
