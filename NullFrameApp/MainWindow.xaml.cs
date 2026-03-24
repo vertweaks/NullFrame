@@ -43,9 +43,17 @@ namespace NullFrame
             => throw new NotImplementedException();
     }
 
+    public class InverseBoolToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type t, object p, CultureInfo c)
+            => value is true ? Visibility.Collapsed : Visibility.Visible;
+        public object ConvertBack(object value, Type t, object p, CultureInfo c)
+            => throw new NotImplementedException();
+    }
+
     // ── Category definition ──────────────────────────────────────────────────
 
-    public record Category(string Name, string Key, string Number);
+    public record Category(string Name, string Key, string Number, string Subtitle);
 
     // ── Main Window ──────────────────────────────────────────────────────────
 
@@ -53,15 +61,15 @@ namespace NullFrame
     {
         private static readonly Category[] Categories =
         {
-            new("CPU & SYSTEM",      "cpu",     "01"),
-            new("GPU & GAMING",      "gpu",     "02"),
-            new("NETWORK",           "network", "03"),
-            new("USB & INPUT",       "usb",     "04"),
-            new("DEVICES",           "devices", "05"),
-            new("STORAGE & SSD",     "storage", "06"),
-            new("MEMORY & RAM",      "memory",  "07"),
-            new("PRIVACY & DEBLOAT", "privacy", "08"),
-            new("BACKUP & RESTORE", "backup",  "09"),
+            new("CPU & SYSTEM",      "cpu",     "01", "Optimize CPU scheduling and system performance."),
+            new("GPU & GAMING",      "gpu",     "02", "Optimize your GPU and gaming performance."),
+            new("NETWORK",           "network", "03", "Optimize network settings and performance."),
+            new("USB & INPUT",       "usb",     "04", "Reduce input latency for peripherals."),
+            new("DEVICES",           "devices", "05", "Disable unnecessary device drivers."),
+            new("STORAGE & SSD",     "storage", "06", "Optimize disk and SSD performance."),
+            new("MEMORY & RAM",      "memory",  "07", "Optimize memory and RAM usage."),
+            new("PRIVACY & DEBLOAT", "privacy", "08", "Remove telemetry and bloatware."),
+            new("BACKUP & RESTORE",  "backup",  "09", "Back up your system settings and restore them."),
         };
 
         private readonly Dictionary<string, List<Tweak>> _tweakMap;
@@ -72,6 +80,7 @@ namespace NullFrame
         {
             // Register converters before InitializeComponent
             Application.Current.Resources["BoolVis"] = new BoolToVisibilityConverter();
+            Application.Current.Resources["InvBoolVis"] = new InverseBoolToVisibilityConverter();
             Application.Current.Resources["StatusBrush"] = new StatusBrushConverter();
             Application.Current.Resources["ToggleVis"] = new TweakTypeVisConverter { VisibleType = TweakType.Toggle };
             Application.Current.Resources["ApplyVis"] = new TweakTypeVisConverter { VisibleType = TweakType.Apply };
@@ -126,32 +135,51 @@ namespace NullFrame
             // Find category info
             var cat = Categories.First(c => c.Key == key);
 
+            // Clear search
+            SearchBox.Text = "";
+
+            HeaderTitle.Text = cat.Name;
+            HeaderSubtitle.Text = cat.Subtitle;
+
             if (key == "backup")
             {
-                // Show backup page, hide tweak list
                 TweakScroller.Visibility = Visibility.Collapsed;
                 BackupScroller.Visibility = Visibility.Visible;
-
-                HeaderEyebrow.Text = $"NULLFRAME  //  MODULE {cat.Number}";
-                HeaderTitle.Text = cat.Name;
                 HeaderCount.Text = "SYSTEM RESTORE";
-
                 BuildBackupPage();
             }
             else
             {
-                // Show tweak list, hide backup page
                 TweakScroller.Visibility = Visibility.Visible;
                 BackupScroller.Visibility = Visibility.Collapsed;
 
                 var tweaks = _tweakMap.GetValueOrDefault(key) ?? new List<Tweak>();
-
-                HeaderEyebrow.Text = $"NULLFRAME  //  MODULE {cat.Number}";
-                HeaderTitle.Text = cat.Name;
-                HeaderCount.Text = $"{tweaks.Count} TWEAKS AVAILABLE";
-
+                HeaderCount.Text = $"{tweaks.Count} TWEAKS";
                 TweakList.ItemsSource = tweaks;
                 LoadTweakStates(tweaks);
+            }
+        }
+
+        // ── Search ────────────────────────────────────────────────────────────
+
+        private void OnSearchChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_activeKey == "backup") return;
+            var query = SearchBox.Text.Trim().ToLower();
+            var tweaks = _tweakMap.GetValueOrDefault(_activeKey) ?? new List<Tweak>();
+
+            if (string.IsNullOrEmpty(query))
+            {
+                TweakList.ItemsSource = tweaks;
+                HeaderCount.Text = $"{tweaks.Count} TWEAKS";
+            }
+            else
+            {
+                var filtered = tweaks.Where(t =>
+                    t.Name.ToLower().Contains(query) ||
+                    t.Description.ToLower().Contains(query)).ToList();
+                TweakList.ItemsSource = filtered;
+                HeaderCount.Text = $"{filtered.Count} / {tweaks.Count} TWEAKS";
             }
         }
 

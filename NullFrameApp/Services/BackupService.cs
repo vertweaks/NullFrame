@@ -69,11 +69,15 @@ namespace NullFrame.Services
 
         public static bool CreateRestorePoint(string description = "NullFrame Backup")
         {
-            var safeDesc = description.Replace("\"", "'");
-            var (ok, _) = SystemHelper.RunPowerShell(
-                $"Enable-ComputerRestore -Drive \"$env:SystemDrive\\\" -ErrorAction SilentlyContinue; " +
-                $"Checkpoint-Computer -Description \"{safeDesc}\" -RestorePointType \"MODIFY_SETTINGS\""
-            );
+            var safeDesc = description.Replace("'", "''");
+            // Bypass the 24-hour frequency limit, enable System Restore, then create
+            var script = $@"
+                $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore'
+                Set-ItemProperty -Path $key -Name 'SystemRestorePointCreationFrequency' -Value 0 -Type DWord -ErrorAction SilentlyContinue
+                Enable-ComputerRestore -Drive ""$env:SystemDrive\"" -ErrorAction SilentlyContinue
+                Checkpoint-Computer -Description '{safeDesc}' -RestorePointType 'MODIFY_SETTINGS'
+            ";
+            var (ok, _) = SystemHelper.RunPowerShell(script);
             return ok;
         }
 

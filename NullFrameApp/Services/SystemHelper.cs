@@ -20,14 +20,17 @@ namespace NullFrame.Services
                 var psi = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{command}\"",
+                    Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command -",
                     UseShellExecute = false,
                     CreateNoWindow = true,
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = capture,
                     RedirectStandardError = capture
                 };
                 using var proc = Process.Start(psi);
                 if (proc == null) return (false, "");
+                proc.StandardInput.Write(command);
+                proc.StandardInput.Close();
                 string output = capture ? proc.StandardOutput.ReadToEnd() : "";
                 proc.WaitForExit(30000);
                 return (proc.ExitCode == 0, output.Trim());
