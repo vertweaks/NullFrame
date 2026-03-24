@@ -173,7 +173,11 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="Background" Value="{StaticResource NfRed}"/>
                             <Setter TargetName="Knob" Property="Background" Value="White"/>
-                            <Setter TargetName="KnobTranslate" Property="X" Value="22"/>
+                            <Setter TargetName="Knob" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform X="22"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Track" Property="Opacity" Value="0.9"/>
